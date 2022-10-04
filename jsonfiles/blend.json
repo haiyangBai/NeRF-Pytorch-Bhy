@@ -1,0 +1,29 @@
+{
+    "net_hyperparams": {
+      "shape_blocks": 3,
+      "texture_blocks": 1,
+      "W": 256,
+      "num_xyz_freq": 10,
+      "num_dir_freq": 4,
+      "latent_dim": 256
+    },
+
+    "data": {
+            "scene_name" : "lego",
+            "root_dir": "/home/baihy/datasets/nerf_synthetic/nerf_synthetic",
+            "data_dir": "../data/ShapeNet_SRN"
+            },
+
+    "N_samples": 96,
+    "near": 2,
+    "far": 6,
+
+    "lr_schedule": {
+            "type":  "step", 
+            "lr":  1e-4, 
+            "interval":  500000
+            },
+
+    "check_points": 100000
+  }
+  
