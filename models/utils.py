@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 
 def get_parameters(models):
@@ -13,3 +14,12 @@ def get_parameters(models):
     else: # models is actually a single pytorch model
         parameters += list(models.parameters())
     return parameters
+
+
+def init_weights(layer):
+    if type(layer) == nn.Conv2d:
+        nn.init.normal_(layer.weight, mean=0, std=0.5)
+    elif type(layer) == nn.Linear:
+        nn.init.uniform_(layer.weight, a=-0.1, b=0.1)
+        nn.init.constant_(layer.bias, 0.1)
+        

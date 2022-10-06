@@ -54,7 +54,7 @@ class NeRF(nn.Module):
         self.in_channels_dir = in_channels_dir
         self.skips = skips
 
-        for i in range(D):
+        for i in range(D-1):
             if i == 0:
                 layer = nn.Linear(in_channels_xyz, W)
             elif i in skips:
@@ -64,11 +64,10 @@ class NeRF(nn.Module):
             layer = nn.Sequential(layer, nn.ReLU(True))
             setattr(self, f'xyz_encoding_{i+1}', layer)
 
-        self.xyz_encoding = nn.Sequential(nn.Linear(W, W), nn.ReLU(True))
+        self.sigma_xyz_encoding = nn.Sequential(nn.Linear(W, W+1), nn.Softplus())
         self.dir_encoding = nn.Sequential(nn.Linear(W+in_channels_dir, W//2),
                                           nn.ReLU(True))
 
-        self.sigma = nn.Sequential(nn.Linear(W, 1), nn.Softplus())
         self.rgb = nn.Sequential(nn.Linear(W//2, 3), nn.Sigmoid())
     
     def forward(self, xyz, dir, sigma_only=False):
@@ -90,18 +89,29 @@ class NeRF(nn.Module):
         input_xyz = xyz
 
         xyz_ = input_xyz
-        for i in range(self.D):
+        for i in range(self.D-1):
             if i in self.skips:
                 xyz_ = torch.cat([input_xyz, xyz_], -1)
             xyz_ = getattr(self, f'xyz_encoding_{i+1}')(xyz_)
 
-        sigma = self.sigma(xyz_)
+        sigma_xyz_encoding = self.sigma_xyz_encoding(xyz_)
+        sigma = sigma_xyz_encoding[..., :1]
+        xyz_encoding = sigma_xyz_encoding[..., 1:]
+
         if sigma_only:
             return sigma
-        xyz_encoding = self.xyz_encoding(xyz_)
+        
         dir_encoding = self.dir_encoding(torch.cat([xyz_encoding, dir], -1))
         rgb = self.rgb(dir_encoding)
 
         out = torch.cat([rgb, sigma], -1)
         return out
         
+
+
+if __name__ == '__main__':
+    model = NeRF()
+    xyz = torch.randn(32, 63)
+    dir = torch.randn(32, 27)
+    res = model(xyz, dir)
+    print(res.shape)
